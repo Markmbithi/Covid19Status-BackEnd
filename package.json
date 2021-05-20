@@ -1,0 +1,30 @@
+{
+  "name": "tele_service",
+  "version": "1.0.0",
+  "description": "Authentication server",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://markmbila@bitbucket.org/tele_service/covid-test-airport-backend.git"
+  },
+  "author": "Mark Mbithi",
+  "license": "ISC",
+  "homepage": "https://bitbucket.org/tele_service/covid-test-airport-backend#readme",
+  "dependencies": {
+    "bcrypt": "^5.0.1",
+    "body-parser": "^1.19.0",
+    "cors": "^2.8.5",
+    "crypto": "^1.0.1",
+    "express": "^4.17.1",
+    "jsonwebtoken": "^8.5.1",
+    "mssql": "^7.1.0",
+    "otp-generator": "^2.0.0",
+    "otplib": "^12.0.1",
+    "speakeasy": "^2.0.0",
+    "totp-generator": "0.0.9",
+    "validator": "^13.6.0"
+  }
+}
