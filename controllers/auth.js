@@ -123,7 +123,7 @@ router.post('/validateOTP', async (req, res) => {
 
         if(tokenValid) {
 
-          // Get user details from DB and create a fully signed token
+          // Get full user details from DB and create a fully signed token
           var result = passenger.getPassenger(passportNumber)
           
           // Create a signed JWT token and send back to client for future access
