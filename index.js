@@ -4,6 +4,7 @@ const cors = require('cors');
 
 var authController= require('./controllers/auth')
 
+// API Routes
 app.use('api', authController);
 
 // start server

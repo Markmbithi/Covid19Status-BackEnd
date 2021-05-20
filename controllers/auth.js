@@ -121,6 +121,7 @@ router.post('/validateOTP', async (req, res) => {
 
         var tokenValid = otpService.verify(otpNumber, config.secret)
 
+        // If token is valid we can send back a signed token
         if(tokenValid) {
 
           // Get full user details from DB and create a fully signed token
@@ -129,7 +130,11 @@ router.post('/validateOTP', async (req, res) => {
           // Create a signed JWT token and send back to client for future access
           var token = jwt.sign({ id: result[0].id, firstName: result[0].firstName, secondName: result[0].secondName, phoneNumber: result[0].phoneNumber }, config.secret, {});
           
-          res.send({"token": token});
+          res.send({"validToken":true, "token": token});
+        }
+        // Token is invalid. Probably expired and user may need to generate a new token
+        else {
+          res.send({"validToken":false, "token": null});
         }
     }
         
@@ -164,11 +169,54 @@ router.post('/login', (req, res) => {
         
         // Send the token through an SMS service
         smsService.sendToken(phoneNumber, token)
+        
+        res.send({tokenSent:true, message:"Please enter token sent to your phone"})
+      }
+      else {
+        res.send({tokenSent:false, message:"Please login again"})
       }
 
     }
     
 })
 
-module.exports =router;
+// Regenerate token 
+router.post('/regenerateToken', (req, res) => {
+
+  // Validate inputs
+  const validationResult =  validatePassengerForm(req.body);
+
+  if (!validationResult.success) {
+      return res.status(400).json({
+      success: false,
+      message: validationResult.message,
+      errors: validationResult.errors
+      });
+  }
+  else {
+
+    var phoneNumber = req.body.phoneNumber
+    var passportNumber = req.body.passportNumber
+    
+    // Proceed with auth to check if the details are correct
+    var exists = await passenger.passengerExists(phoneNumber, passportNumber)
+
+    // After login we will send a signed token
+    if(exists) {
+
+      // Generate TOTP for 2 factor authentication
+      var token = otpService.generateToken(config.secret)
+      
+      // Send the token through an SMS service
+      await smsService.sendToken(phoneNumber, token)
+
+      res.send({tokenSent:true, message:"Please enter token sent to your phone"})
+    }
+    else {
+      res.send({tokenSent:false, message:"Please login again"})
+    }
+  }  
+})
+
+module.exports=router;
 
