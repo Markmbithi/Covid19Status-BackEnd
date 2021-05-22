@@ -1,13 +1,11 @@
 const express = require('express');
 const app = express();
-const cors = require('cors');
+const port = process.env.PORT || 4000
 
-var authController= require('./controllers/auth')
+const Routes = require('./routes/auth-routes')
 
-// API Routes
-app.use('api', authController);
+app.use('/', Routes);
 
-// start server
-const server = app.listen(4000, function () {
-    console.log('Authentication Server listening on port ' + 4000);
+app.listen(port, () => {
+    console.log('Covid Results Server listening on port ' + port);
 });

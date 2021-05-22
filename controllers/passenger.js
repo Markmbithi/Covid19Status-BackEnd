@@ -1,22 +1,18 @@
-var sql = require('mssql');
-var config = require('../config/config');
-var bcrypt =  require('bcrypt');
+const sql = require('mssql');
+const config = require('../config/config');
 
-module.exports.getPassengers = () => {
+const getPassengers = () => {
 
     sql.connect(config.config, (err) => {
     
         if (err) console.log(err);
     
-        // create Request object
-        var request = new sql.Request();
-           
-        // query to the database and get the passenger records
+        const request = new sql.Request();
+        
         request.query('select * from passenger', (err, recordset) => {
             
             if (err) console.log(err)
     
-            // return records
             return recordset;
             
         });
@@ -24,92 +20,44 @@ module.exports.getPassengers = () => {
 
 }
 
-// Check whether the particular passenger exists in the system
-module.exports.getPassenger = (passportNumber) => {
+const getPassengerDetails = (passportNumber) => {
 
     sql.connect(config.config, (err) => {
     
         if (err) console.log(err);
     
-        // create Request object
-        var request = new sql.Request();
-           
-        // query to the database and get the passenger records
-        request.query(`select * from passenger where passportNumber = ${passportNumber} `, (err, recordset) => {
-            
-            if (err) console.log(err)
-    
-            // return records
-            return recordset;
-            
-        });
-    });
-
-}
-
-/*
-// Insert encrtypted OTP password into passenger password field
-module.exports.saveOTP = async (passportNumber, otp) => {
-
-    // Encrypt OTP 
-    var hashedotp = bcrypt.hashSync(otp, 8)
-    
-    // Save OTP data into the OTP field of the passenger table
-    var dbConn = new sql.Connection(config.config);
-
-    dbConn.connect().then( ()=> {
-		var transaction = new sql.Transaction(dbConn);
-		transaction.begin().then(() => {
-			var request = new sql.Request(transaction);
-            request.query(`update passenger set otp = ${hashedotp} where passportNumber = ${passportNumber}`)
-			.then(() => {
-				transaction.commit().then( (resp) => {
-                    dbConn.close();
-                    return {message:resp}
-                }).catch( (err) => {
-                    console.log("Error in Transaction Commit " + err);
-                    dbConn.close();
-                    return {message:err}   
-                });
-			}).catch((err) => {
-                console.log("Error in Transaction Begin " + err);
-                dbConn.close();
-                return {message:err}
-            })
-		}).catch( (err) => {
-            console.log(err);
-            dbConn.close();
-            return ({message:err})
-        }).catch( (err) => {
-        console.log(err);
-        return ({message:err})
-    });
-
-  });
+        const request = new sql.Request();
         
-}*/
-
-// Check if passenger exists in system
-module.exports.passengerExists = async (phoneNumber, passportNumber) => {
-    
-    sql.connect(config.config, (err) => {
-    
-        if (err) console.log(err);
-    
-        // create Request object
-        var request = new sql.Request();
-           
-        // query to the database and get the passenger records
-        request.query(`select * from passenger where passportNumber = ${passportNumber} and phoneNumber = ${phoneNumber}`, (err, recordset) => {
+        request.query(`select * from passenger where passportNumber = ${passportNumber} `, (err, result) => {
             
-            if (err) return {message: err};
+            if (err) return { error: err}
     
-            // If user exists return the results
-            return recordset;
+            return { id: result.recordset[0].id, firstName: result.recordset[0].firstName, secondName: result.recordset[0].secondName, phoneNumber: result.recordset[0].phoneNumber };           
             
         });
     });
+
 }
 
+const passengerExists = async (passportNumber) => {
 
+    try {
+        let pool = await sql.connect(config.config)
+        let result = await pool.request()
+            .input('input_parameter', sql.NVarChar, passportNumber)
+            .query('select * from passenger where passportNumber = @input_parameter')
+        
+        if(!result.recordsets.length) return { exists:false }
 
+        return { exists:true }
+    
+    } catch (err) {
+        return { error:err }
+    }
+}
+
+module.exports = {
+    passengerExists,
+    getPassengers,
+    getPassengerDetails
+}
