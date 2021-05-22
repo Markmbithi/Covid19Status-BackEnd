@@ -15,6 +15,7 @@ const authHeader = req.header.authorization;
     jwt.verify(token, secret, (err, decoded) => {
         if(err) {
             res.status(400).send({message:'Invalide token'});
+            next('route')
         }
 
         res.status(200).send(decoded);

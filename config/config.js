@@ -5,7 +5,7 @@ const accessTokenSecret = crypto.randomBytes(64).toString('hex');
 
 module.exports = {
     'secret': accessTokenSecret,
-    config = {
+     'config' : {
         user: 'sa',
         password: '&Isaiah2911',
         server: 'localhost', 

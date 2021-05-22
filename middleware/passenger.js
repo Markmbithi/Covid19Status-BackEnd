@@ -19,7 +19,7 @@ const checkSentDetails = (req, res, next) => {
     if (!err && !validPhone) {
       
       res.status(400).send({message: 'Invalid Phone number or Passport Number'});
-      
+      next('route')      
     }
 
     req.passportNumber=passportNumber
@@ -40,6 +40,7 @@ const checkPassengerExists = async (req, res, next) => {
 
     if(!exists && error) {
       res.status(400).send({ message: 'Passenger does not exist' });
+      next('route') 
     }
 
     next()
