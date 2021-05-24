@@ -1,29 +1,47 @@
+const crypto = require('crypto');
 const { verifyTOTP, generateTOTP } = require('../service/totp-service')
+const { getPassengerSecret, insertSecret } = require('../controllers/passenger')
 
-const verify_TOTP = (req, res, next) => {
-
-    const token = req.body.token;
-
-    const tokenValid = verifyTOTP(token)
+const verify_TOTP = async (req, res, next) => {
     
-    if(!tokenValid) {
-        res.status(422).send({ message: 'Please enter token sent to SMS' });
-        next('route')
+    try {
+
+        const { phoneNumber, totp } = req.body
+        
+        const passenger = await getPassengerSecret({ phoneNumber: phoneNumber })
+            const secret = passenger.secret
+                
+            const codeValid = verifyTOTP(totp, secret)
+
+            if(!codeValid) {
+                res.status(422).send({ message: 'Please enter valid code sent to your phone' });
+                return
+            }
+            next()
+
+    } catch(error) {
+        res.status(400).send(error);
+        return 
     }
 
-    next()    
 }
 
-const generate_TOTP = (req, res, next) => {
+const generate_TOTP = async (req, res, next) => {
 
     try {
-        const totp = generateTOTP()
-        req.totp = totp
 
-        next()
+        const secret = crypto.randomBytes(64).toString('hex');
+        const { phoneNumber } = req.body;
+        
+        await insertSecret({phoneNumber, secret});
+       
+        const totp = generateTOTP(secret)
+        req.totp = totp
+        next()            
+
     } catch(error) {
         res.status(400).send({ message: 'Problem please try later' });
-        next('route') 
+        return 
     }
     
 }

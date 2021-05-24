@@ -1,11 +1,16 @@
 const { totp } = require('otplib');
-const { secret } = require('../config/config')
 
-totp.options = { digits: 5, algorithm: "sha512", epoch: 0, step:300 }
+totp.options = { digits: 6, step:300, window:0 }
 
-const generateTOTP = () => totp.generate(secret)
+const generateTOTP = (secret) => {
+    totp.options = { epoch: Date.now() }
+    return totp.generate(secret)
+}
 
-const verifyTOTP = (token) => totp.verify({ token, secret })
+const verifyTOTP = (token, secret) => {
+    totp.options = { epoch : Date.now() }
+    return totp.verify({ token, secret })
+}
 
 module.exports = {
     generateTOTP,

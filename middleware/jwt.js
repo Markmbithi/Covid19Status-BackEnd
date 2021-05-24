@@ -1,10 +1,12 @@
 const jwt = require('jsonwebtoken');
-const { secret } = require('../config/config');
+const { secret } = require('../config');
 const { getPassengerDetails } = require('../controllers/passenger')
 
 const verifyJwtToken = (req, res, next) => {
+
+    console.log("headers:"+req.headers)
     
-const authHeader = req.header.authorization;
+    const authHeader = req.headers.authorization;
     
     if(!authHeader) {
         res.status(400).send({message: 'No token provided'})
@@ -14,23 +16,19 @@ const authHeader = req.header.authorization;
         
     jwt.verify(token, secret, (err, decoded) => {
         if(err) {
-            res.status(400).send({message:'Invalide token'});
-            next('route')
+            res.status(400).send(err);
         }
-
-        res.status(200).send(decoded);
-
         next()
     });
 }
 
 const generateJwtToken = async (req, res, next) => {
 
-    const passportNumber = req.passportNumber
+    const passportNumber = req.body.passportNumber
     
     try {
         const passportDetails = await getPassengerDetails(passportNumber) 
-        const token = jwt.sign({ id: passportDetails.id, firstName: passportDetails.firstName, secondName: passportDetails.secondName, phoneNumber: passportDetails.phoneNumber }, secret, {});
+        const token = jwt.sign({ id: passportDetails.Id, firstName: passportDetails.firstName, secondName: passportDetails.secondName, phoneNumber: passportDetails.phoneNumber }, secret, {});
         req.token = token
         next()
     } catch(error) {

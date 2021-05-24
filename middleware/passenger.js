@@ -1,55 +1,61 @@
 const Joi = require('joi');
 const validatePhoneJoi = Joi.extend(require('joi-phone-number'));
-const { passengerExists } = require('../controllers/passenger')
+const { passengerExists, insertSecret } = require('../controllers/passenger')
 
-const passengerSchema = Joi.object().keys({
-    passportNumber: Joi.string().regex(/^[A-Za-z]+[0-9]$/).required()
+const passengerSchema = Joi.object({
+    passportNumber: Joi.string().regex(/^[A-Z]{2}[0-9]{7}$/).required(),
+    phoneNumber: validatePhoneJoi.string().phoneNumber().required()   
   });
 
-const verifyPhoneNumber = (phoneNumber) => {
-  return validatePhoneJoi.string().phoneNumber().validate(phoneNumber);
-} 
+const checkSentDetails = async (req, res, next) => {
 
-const checkSentDetails = (req, res, next) => {
+  const passengerDetails = {
+    passportNumber: req.body.passportNumber,
+    phoneNumber: req.body.phoneNumber
+  }
 
-  Joi.validate(req.body.passportNumber, passengerSchema, (err, value) => {
-    
-    const validPhone = verifyPhoneNumber(req.body.phoneNumber)
-
-    if (!err && !validPhone) {
-      
-      res.status(400).send({message: 'Invalid Phone number or Passport Number'});
-      next('route')      
-    }
-
-    req.passportNumber=passportNumber
-    req.phoneNumber=phoneNumber
-    
-    next()
-
-  });
-  
+  try {
+    const value = await passengerSchema.validateAsync(passengerDetails);
+    if(value) next()
+  }
+  catch (err) { 
+    res.status(400).send({error: err.details[0].message});
+    return
+  }  
 }
 
 const checkPassengerExists = async (req, res, next) => {
-
-  const passportNumber = req.passportNumber
-  
+  /** Every successful passenger login we have we should create a new secret and store it in db alongside phone number of passenger who 
+   *  exists secret. We store secret and phone number of the person loging in. If phone number exists we just update the new secret
+   *  When authenticating code we find secret by phone number and authenticate code. If phone number exists
+   */ 
+  const passportNumber = req.body.passportNumber
+    
   try {
-    const { exists, error } = await passengerExists(passportNumber)
-
-    if(!exists && error) {
-      res.status(400).send({ message: 'Passenger does not exist' });
-      next('route') 
-    }
-
+   
+    await passengerExists(passportNumber)
     next()
+    
   } catch(error) {
-      res.status(400).send({ message: 'Problem please try later' });
+      res.status(400).send(error);
+      return
   } 
 }
 
+const createLoginSecret = async (req, res, next) => {
+
+  const phoneNumber = req.body.phoneNumber
+  try {
+   
+    await insertSecret({phoneNumber: phoneNumber})
+    next()
+  } catch(error) {
+      res.status(400).send(error);
+      return
+  }
+}
 module.exports = {
   checkSentDetails,
-  checkPassengerExists
+  checkPassengerExists,
+  createLoginSecret
 }
